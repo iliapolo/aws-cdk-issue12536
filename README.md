@@ -1,14 +1,29 @@
-# Welcome to your CDK TypeScript project!
+# AWS CDK Issue 12536 - Asset Corruption
 
-This is a blank project for TypeScript development with CDK.
+This is a repository for reproducing and testing various permutations related to [Issue 12536](https://github.com/iliapolo/aws-cdk-issue12536)
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+## Prerequisites
 
-## Useful commands
+- The AWS CLI must be available in the `PATH` under the `aws` command, and configured with the appropriate region.
 
- * `npm run build`   compile typescript to js
- * `npm run watch`   watch for changes and compile
- * `npm run test`    perform the jest unit tests
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk synth`       emits the synthesized CloudFormation template
+## Usage
+
+The repository includes a simple pre-defined [stack](./lib/asset-corruption-stack.ts) to verify proper functionality.
+You can replace it with your own stack if needed.
+
+1. `git clone https://github.com/iliapolo/aws-cdk-issue12536.git`
+2. `cd aws-cdk-issue12536 && ./run.sh`
+
+The `run.sh` script will take care of all necessary cache clearance and will destroy the stack in the end. You can simply re-run it as many times you like with different configurations. The following envrionment variables are available to control versions of the relevant components:
+
+- `NODE_VERSION` (Default 15.6.0)
+- `CDK_VERSION` (Default 1.88.0)
+- `CRC32_STREAM_VERSION` (Default 4.0.2)
+- `ARCHIVER_VERSION` (Default 5.2.0)
+
+All these components, including `NodeJS` itself and `yarn`, are installed and used locally. (Under `./.node-versions` and `./node_modules`)
+
+### Permutations
+
+- Working: `crc32-stream` **>=** `4.0.2` **OR** Node **<=** `15.5.0`
+- Non working: `crc32-stream` **<** `4.0.2` **AND** Node **>** `15.5.0`

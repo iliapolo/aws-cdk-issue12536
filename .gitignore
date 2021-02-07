@@ -6,3 +6,7 @@ node_modules
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+.node-versions/
+package.json.bak
+package-lock.json
