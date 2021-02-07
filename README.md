@@ -5,6 +5,7 @@ This is a repository for reproducing and testing various permutations related to
 ## Prerequisites
 
 - The AWS CLI must be available in the `PATH` under the `aws` command, and configured with the appropriate region.
+- Mac OR Linux (Not windows).
 
 ## Usage
 
