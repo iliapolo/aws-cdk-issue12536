@@ -54,27 +54,15 @@ function use_version {
 
 }
 
-function use_cdk {
-  use_version "aws-cdk" ${1}
-}
-
-function use_crc32_stream {
-  use_version "crc32-stream" ${1}
-}
-
-function use_archiver {
-  use_version "archiver" ${1}
-}
-
 mkdir -p ${scriptdir}/.node-versions
 pushd ${scriptdir}
 
 echo "Installing NodeJS ${NODE_VERSION}"
 install_node
 
-use_cdk ${CDK_VERSION}
-use_crc32_stream ${CRC32_STREAM_VERSION}
-use_archiver ${ARCHIVER_VERSION}
+use_version "aws-cdk" ${CDK_VERSION}
+use_version "crc32-stream" ${CRC32_STREAM_VERSION}
+use_version "archiver" ${ARCHIVER_VERSION}
 
 pushd ${scriptdir}
 
@@ -86,8 +74,14 @@ npm run build
 echo "Synthesizing..."
 cdk synth
 
-echo "Destroying previous stack"
-cdk destroy
+echo "Deploying..."
+set +e
+cdk deploy
+exit_code=$?
+set -e
+
+echo "Destroying..."
+cdk destroy -f
 
 echo "Removing relevant assets from staging bucket"
 staging_bucket=$(aws cloudformation describe-stack-resources --stack-name CDKToolkit --logical-resource-id StagingBucket --query 'StackResources[].PhysicalResourceId' --output=text)
@@ -97,15 +91,6 @@ for asset in $(ls cdk.out | grep asset); do
 done
 echo "Removing cdk.out"
 rm -rf cdk.out
-
-echo "Deploying"
-set +e
-cdk deploy
-exit_code=$?
-set -e
-
-echo "Destroying"
-cdk destroy -f
 
 if [ ${exit_code} -eq 0 ]; then
   echo -e "Success"
