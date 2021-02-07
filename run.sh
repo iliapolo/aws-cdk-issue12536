@@ -67,7 +67,7 @@ function use_archiver {
 }
 
 mkdir -p ${scriptdir}/.node-versions
-cd ${scriptdir}
+pushd ${scriptdir}
 
 echo "Installing NodeJS ${NODE_VERSION}"
 install_node
@@ -76,30 +76,27 @@ use_cdk ${CDK_VERSION}
 use_crc32_stream ${CRC32_STREAM_VERSION}
 use_archiver ${ARCHIVER_VERSION}
 
-yarn install
-
 pushd ${scriptdir}
 
-if [ -d cdk.out ]; then
-  echo "Destroying previous stack"
-  cdk -a cdk.out destroy -f
-fi
-
-cd ${scriptdir}
-
-if [ -d cdk.out ]; then
-  echo "Removing relevant assets from staging bucket"
-  staging_bucket=$(aws cloudformation describe-stack-resources --stack-name CDKToolkit --logical-resource-id StagingBucket --query 'StackResources[].PhysicalResourceId' --output=text)
-  for asset in $(ls cdk.out | grep asset); do
-    hash=$(echo ${asset} | cut -d'.' -f2)
-    aws s3 rm s3://${staging_bucket}/assets/${hash}.zip
-  done
-  echo "Removing cdk.out"
-  rm -rf cdk.out
-fi
+yarn install
 
 echo "Compiling..."
 npm run build
+
+echo "Synthesizing..."
+cdk synth
+
+echo "Destroying previous stack"
+cdk destroy
+
+echo "Removing relevant assets from staging bucket"
+staging_bucket=$(aws cloudformation describe-stack-resources --stack-name CDKToolkit --logical-resource-id StagingBucket --query 'StackResources[].PhysicalResourceId' --output=text)
+for asset in $(ls cdk.out | grep asset); do
+  hash=$(echo ${asset} | cut -d'.' -f2)
+  aws s3 rm s3://${staging_bucket}/assets/${hash}.zip
+done
+echo "Removing cdk.out"
+rm -rf cdk.out
 
 echo "Deploying"
 set +e
@@ -121,5 +118,6 @@ echo " - CDK_VERSION: $(cdk --version)"
 echo " - CRC32_STREAM_VERSION: $(node -p 'require(path.join(path.dirname(path.dirname(require.resolve("crc32-stream"))), "package.json")).version')"
 echo " - ARCHIVER_VERSION: $(node -p 'require(path.join(path.dirname(require.resolve("archiver")), "package.json")).version')"
 
-exit ${exit_code}
 popd
+
+exit ${exit_code}
